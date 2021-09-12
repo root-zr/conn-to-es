@@ -32,5 +32,5 @@ public class Client {
     public void stopClient() throws IOException {
         client.close();
     }
-    
+
 }

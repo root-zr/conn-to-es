@@ -1,7 +1,7 @@
 # conn2ES
 
 #### 介绍
-javaApi连接到elasticsearch
+java和Scala的spark Api连接到elasticsearch
 
 #### 软件架构
 软件架构说明
