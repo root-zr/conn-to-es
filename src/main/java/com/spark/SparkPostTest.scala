@@ -15,7 +15,7 @@ import org.apache.spark.sql.{DataFrame, SQLContext, SparkSession}
 import org.apache.spark.{SparkConf, SparkContext}
 import sun.net.www.http.HttpClient
 
-object SparkTest {
+object SparkPostTest {
 
   def main(args: Array[String]): Unit = {
 

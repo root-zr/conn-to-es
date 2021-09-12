@@ -28,9 +28,10 @@ object SparkGetTest {
 
     csv_data.show()
 
-
-    val client = new HttpClient
     // 设置代理服务器地址和端口
+    val client = new HttpClient() //这里可以设置用来连接的密码等信息
+
+
 
     // 使用 GET 方法 ，如果服务器需要通过 HTTPS 连接，那只需要将下面 URL 中的 http 换成 https
     val method = new GetMethod("http://127.0.0.1:9201/_cat/indices?v")
