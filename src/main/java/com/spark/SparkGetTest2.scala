@@ -38,7 +38,7 @@ object SparkGetTest2 {
       val response = httpClient.execute(get)    // 发送请求
       EntityUtils.toString(response.getEntity)    // 获取返回结果
     }
-    
+
     val res = getResponse("http://127.0.0.1:9201/_cat/indices?v")
     println(res)
 
