@@ -1,18 +1,22 @@
 package com.spark
 
-import java.net.{URI, URLEncoder}
+import java.net.URI
 
-import org.apache.commons.httpclient.HttpClient
-import org.apache.commons.httpclient.methods.GetMethod
-import org.apache.http.client.methods.HttpPost
+import org.apache.http.auth.{AuthScope, UsernamePasswordCredentials}
+import org.apache.http.client.methods.{CloseableHttpResponse, HttpGet, HttpPost}
+import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.{BasicCredentialsProvider, HttpClients}
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
+import org.apache.http.util.EntityUtils
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
+
+import scala.util.parsing.json.JSON
 
 object SparkGetTest {
 
   def main(args: Array[String]): Unit = {
+
     // TODO 准备环境
     val sparkConf = new SparkConf().setMaster("local[*]").setAppName("sparkSession")
 
@@ -28,21 +32,71 @@ object SparkGetTest {
 
     csv_data.show()
 
-    // 设置代理服务器地址和端口
-    val client = new HttpClient() //这里可以设置用来连接的密码等信息
 
 
+    val credentials = new UsernamePasswordCredentials("elastic","123456")
 
-    // 使用 GET 方法 ，如果服务器需要通过 HTTPS 连接，那只需要将下面 URL 中的 http 换成 https
-    val method = new GetMethod("http://127.0.0.1:9201/_cat/indices?v")
-    client.executeMethod(method)
-    //打印服务器返回的状态
-    println(method.getStatusLine)
-    //打印返回的信息
-    println(method.getResponseBodyAsString)
-    //释放连接
-    method.releaseConnection()
+    val provider = new BasicCredentialsProvider()
+    provider.setCredentials(AuthScope.ANY,credentials)
 
+    val connManager = new PoolingHttpClientConnectionManager()
+    val client = HttpClients.custom.setConnectionManager(connManager) //connManager可以用来设置跨域的问题
+      .setDefaultCredentialsProvider(provider) //proviser可以用来设置用户名和密码
+      .build()
+
+   val httpGet = new HttpGet()
+
+    val esNodes = "localhost:9200"
+    val esDefaultPort = "9200"
+
+    def getHttpReponse(esNodes: String): CloseableHttpResponse = {
+      val node = esNodes.split(",").head
+      val Array(host, port) = (if (node.contains(":")) node else s"${node.trim}:${esDefaultPort}").split(":")
+      val esNode = s"${host}:${port}"
+      val searchUrl = s"http://${esNode}/user/_count"
+       httpGet.setURI(URI.create(searchUrl))
+
+      println(searchUrl)
+
+
+      val httpResponse = try {
+        client.execute(httpGet)
+      } catch {
+        case e: Exception => null
+      }
+
+      httpResponse match {
+        case x:CloseableHttpResponse if x.getStatusLine.getStatusCode == 200 => x
+        case _=>getHttpReponse(if(esNodes.contains(",")) esNodes.substring(esNodes.indexOf(",") + 1 ) else "")
+      }
+
+      return httpResponse
+    }
+
+    val httpResponse = getHttpReponse(esNodes)
+    println(httpResponse)
+
+
+    val jsonOption = JSON.parseFull(EntityUtils.toString(httpResponse.getEntity(),"UTF-8"))
+    EntityUtils.consume(httpResponse.getEntity())
+    httpResponse.close()
+    client.close()
+
+    def regJson(json:Option[Any]): Map[String,Any] = json match {
+      case Some(map:Map[String,Any]) => map
+    }
+
+    def getFromJsonByXpath(input:Option[Any],xPath:String):Any ={
+      val paths = xPath.split("\\.")
+      val json = regJson(input).get(paths(0))
+      if(paths.length > 1)
+        getFromJsonByXpath(json,xPath.substring(xPath.indexOf(".") + 1 ))
+      else json.get
+
+    }
+
+    val res = getFromJsonByXpath(jsonOption,"count").toString.toFloat.toInt
+    println(res)
 
     // TODO 关闭环境
     spark.stop()
