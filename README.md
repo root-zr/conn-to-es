@@ -1,7 +1,11 @@
 # conn2ES
 
 #### 介绍
-java和Scala的spark Api连接到elasticsearch
+java和Scala的两种语言实现的Api连接到elasticsearch
+
+kibana的端口号： http://localhost:5601
+
+elasticsearch： http://localhost:9200
 
 #### 软件架构
 软件架构说明
