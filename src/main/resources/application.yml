@@ -1,0 +1,4 @@
+#es.nodes: localhost:9200
+#es.net.http.auth.user: elastic
+#es.net.http.auth.pass: 123456
+
